@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>毎回ランダム 5分計算順序トレーニング</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --border:#d1d5db; --accent:#2563eb; --good:#047857; --bad:#b91c1c;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:14px;background:var(--bg);color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+main{max-width:760px;margin:auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+h1{font-size:1.3rem;margin:0 0 6px}
+.sub{margin:0 0 16px;color:var(--muted);font-size:.95rem}
+.top{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:.9rem}
+.bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:10px 0 22px}
+.bar>div{height:100%;background:var(--accent);width:10%;transition:width .2s}
+.prompt{text-align:center;color:var(--muted);font-size:.95rem}
+.expr{text-align:center;font-size:2rem;font-weight:700;line-height:1.45;margin:12px 0 24px;word-break:break-word}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;min-height:54px;border-radius:14px;border:1px solid var(--border);background:#fff;padding:12px 14px;text-align:left}
+button:active{transform:scale(.99)}
+button:disabled{opacity:.6}
+.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.primary{background:var(--accent);color:white;border-color:var(--accent);text-align:center;font-weight:700}
+.secondary{text-align:center}
+.feedback{min-height:54px;text-align:center;font-weight:700;margin:16px 0 0}
+.good{color:var(--good)} .bad{color:var(--bad)}
+.rules{margin-top:16px;background:#eef4ff;border-radius:14px;padding:14px;line-height:1.8}
+.result{text-align:center;font-size:2rem;font-weight:800;margin:18px 0 8px}
+.note{text-align:center;color:var(--muted);font-size:.9rem}
+@media(max-width:520px){.choices{grid-template-columns:1fr}.expr{font-size:1.65rem}.card{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+<div class="card">
+  <h1>毎回ランダム 5分計算順序トレーニング</h1>
+  <p class="sub">開くたび・やり直すたびに、数字と式を自動で作ります。</p>
+
+  <div class="top"><span id="progress">1 / 10</span><span id="score">正解 0</span></div>
+  <div class="bar"><div id="bar"></div></div>
+
+  <div id="quiz">
+    <div class="prompt">最初に計算する部分はどこ？</div>
+    <div id="expr" class="expr"></div>
+    <div id="choices" class="choices"></div>
+    <div id="feedback" class="feedback" aria-live="polite"></div>
+    <div class="actions">
+      <button id="next" class="primary" disabled>次の問題</button>
+      <button id="restart" class="secondary">新しい10問</button>
+    </div>
+  </div>
+
+  <div class="rules">
+    <strong>順番</strong><br>
+    ① （ ）の中<br>
+    ② ×・÷（同じ優先順位なら左から）<br>
+    ③ ＋・−（同じ優先順位なら左から）<br>
+    <span style="color:var(--muted)">速さより正確さ。全問正解を目標に。</span>
+  </div>
+</div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+  const pick = arr => arr[rnd(0,arr.length-1)];
+  const shuffle = arr => {
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=rnd(0,i); [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  };
+
+  // 表示用
+  const fmt = s => s.replaceAll('*','×').replaceAll('/','÷').replaceAll('+','＋').replaceAll('-','−');
+
+  // 同じ答え候補が出ないように整える
+  function uniqueChoices(items){
+    const out=[];
+    for(const x of items){ if(x && !out.includes(x)) out.push(x); }
+    return out;
+  }
+
+  // 問題テンプレート。
+  // answerText が「最初に処理する部分」。
+  function makeQuestion(){
+    const type=rnd(1,7);
+    let e, ans, wrong=[];
+
+    if(type===1){
+      // a + b × (c - d)
+      const a=rnd(5,40), b=rnd(2,9), d=rnd(1,6), c=rnd(d+2,d+9);
+      e=`${a} + ${b} * (${c} - ${d})`;
+      ans=`${c} - ${d}`;
+      wrong=[`${a} + ${b}`,`${b} * ${c}`,`${b} * (${c} - ${d})`];
+    } else if(type===2){
+      // a - b × c + d
+      const a=rnd(20,80), b=rnd(2,9), c=rnd(2,9), d=rnd(1,15);
+      e=`${a} - ${b} * ${c} + ${d}`;
+      ans=`${b} * ${c}`;
+      wrong=[`${a} - ${b}`,`${c} + ${d}`,`${a} - ${b*c}`];
+    } else if(type===3){
+      // a ÷ (b-c) + d
+      const c=rnd(1,6), b=rnd(c+2,c+8), diff=b-c;
+      const k=rnd(2,9), a=diff*k, d=rnd(1,15);
+      e=`${a} / (${b} - ${c}) + ${d}`;
+      ans=`${b} - ${c}`;
+      wrong=[`${a} / ${b}`,`${c} + ${d}`,`${a} / ${diff}`];
+    } else if(type===4){
+      // a + b ÷ c × d
+      const c=rnd(2,9), k=rnd(2,9), b=c*k, a=rnd(1,25), d=rnd(2,8);
+      e=`${a} + ${b} / ${c} * ${d}`;
+      ans=`${b} / ${c}`;
+      wrong=[`${a} + ${b}`,`${c} * ${d}`,`${b} / (${c} * ${d})`];
+    } else if(type===5){
+      // a - (b+c) × d
+      const a=rnd(30,100), b=rnd(2,15), c=rnd(2,15), d=rnd(2,8);
+      e=`${a} - (${b} + ${c}) * ${d}`;
+      ans=`${b} + ${c}`;
+      wrong=[`${a} - ${b}`,`${c} * ${d}`,`(${b} + ${c}) * ${d}`];
+    } else if(type===6){
+      // a ÷ (b - c × d)
+      const c=rnd(2,6), d=rnd(2,5), cd=c*d;
+      const inner=rnd(2,8), b=cd+inner;
+      const k=rnd(2,9), a=inner*k;
+      e=`${a} / (${b} - ${c} * ${d})`;
+      ans=`${c} * ${d}`;
+      wrong=[`${a} / ${b}`,`${b} - ${c}`,`${b} - ${cd}`];
+    } else {
+      // a + (b ÷ c - d) × e
+      const c=rnd(2,8), q=rnd(3,10), b=c*q;
+      const d=rnd(1,Math.max(1,q-1)), a=rnd(1,20), e2=rnd(2,7);
+      e=`${a} + (${b} / ${c} - ${d}) * ${e2}`;
+      ans=`${b} / ${c}`;
+      wrong=[`${a} + ${b}`,`${c} - ${d}`,`${d} * ${e2}`];
+    }
+
+    let choices=uniqueChoices([ans,...wrong]);
+    // 念のため4択にする
+    while(choices.length<4) choices.push(`別の部分 ${choices.length+1}`);
+    choices=shuffle(choices.slice(0,4));
+    return {
+      expr:fmt(e),
+      choices:choices.map(fmt),
+      answer:fmt(ans),
+      why: explanationFor(e, ans)
+    };
+  }
+
+  function explanationFor(expr, ans){
+    if(expr.includes('(')){
+      // 括弧内に×÷があるなら、その×÷を先に。
+      const inside=expr.slice(expr.indexOf('(')+1, expr.indexOf(')'));
+      if(inside.includes('*') || inside.includes('/')){
+        if(ans.includes('*') || ans.includes('/')) return '（ ）の中でも、×・÷を先に計算します。';
+        return 'まず（ ）の中を計算します。';
+      }
+      return 'まず（ ）の中を計算します。';
+    }
+    if(ans.includes('*') || ans.includes('/')) return '×・÷は、＋・−より先です。';
+    return '同じ優先順位なら左から計算します。';
+  }
+
+  let qs=[], idx=0, score=0, answered=false;
+
+  function newSet(){
+    qs=Array.from({length:10},()=>makeQuestion());
+    idx=0; score=0; render();
+  }
+
+  function render(){
+    answered=false;
+    const q=qs[idx];
+    $('progress').textContent=`${idx+1} / 10`;
+    $('score').textContent=`正解 ${score}`;
+    $('bar').style.width=`${(idx+1)*10}%`;
+    $('expr').textContent=q.expr;
+    $('choices').innerHTML='';
+    $('feedback').textContent='';
+    $('feedback').className='feedback';
+    $('next').disabled=true;
+    $('next').textContent=idx===9?'結果を見る':'次の問題';
+
+    q.choices.forEach(choice=>{
+      const b=document.createElement('button');
+      b.type='button'; b.textContent=choice;
+      b.addEventListener('click',()=>answer(choice));
+      $('choices').appendChild(b);
+    });
+  }
+
+  function answer(choice){
+    if(answered) return;
+    answered=true;
+    const q=qs[idx];
+    [...$('choices').children].forEach(b=>b.disabled=true);
+    if(choice===q.answer){
+      score++;
+      $('feedback').textContent='○ 正解！ '+q.why;
+      $('feedback').className='feedback good';
+    }else{
+      $('feedback').textContent=`× 惜しい。最初は「${q.answer}」。${q.why}`;
+      $('feedback').className='feedback bad';
+    }
+    $('score').textContent=`正解 ${score}`;
+    $('next').disabled=false;
+  }
+
+  function finish(){
+    $('expr').innerHTML=`<div class="result">${score} / 10</div>`;
+    $('choices').innerHTML='';
+    $('feedback').className='feedback';
+    $('feedback').textContent=score===10
+      ? '全問正解。今日は終了！'
+      : score>=8
+      ? 'かなり良いです。明日も3〜5分だけ。'
+      : '焦らず、順番だけ確認。新しい10問でもう一度できます。';
+    $('next').disabled=true;
+  }
+
+  $('next').addEventListener('click',()=>{
+    if(idx===9){ finish(); }
+    else { idx++; render(); }
+  });
+  $('restart').addEventListener('click',newSet);
+
+  newSet();
+})();
+</script>
+</body>
+</html>
