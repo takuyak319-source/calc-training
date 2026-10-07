@@ -2,238 +2,281 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>毎回ランダム 5分計算順序トレーニング</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>計算順序＋逆算ルール ランダム20問</title>
 <style>
-:root{
-  --bg:#f6f7f9; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
-  --border:#d1d5db; --accent:#2563eb; --good:#047857; --bad:#b91c1c;
-}
-*{box-sizing:border-box}
-body{margin:0;padding:14px;background:var(--bg);color:var(--text);
-font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
-main{max-width:760px;margin:auto}
-.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
-h1{font-size:1.3rem;margin:0 0 6px}
-.sub{margin:0 0 16px;color:var(--muted);font-size:.95rem}
-.top{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:.9rem}
-.bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:10px 0 22px}
-.bar>div{height:100%;background:var(--accent);width:10%;transition:width .2s}
-.prompt{text-align:center;color:var(--muted);font-size:.95rem}
-.expr{text-align:center;font-size:2rem;font-weight:700;line-height:1.45;margin:12px 0 24px;word-break:break-word}
-.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-button{font:inherit;min-height:54px;border-radius:14px;border:1px solid var(--border);background:#fff;padding:12px 14px;text-align:left}
-button:active{transform:scale(.99)}
-button:disabled{opacity:.6}
-.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:12px}
-.primary{background:var(--accent);color:white;border-color:var(--accent);text-align:center;font-weight:700}
-.secondary{text-align:center}
-.feedback{min-height:54px;text-align:center;font-weight:700;margin:16px 0 0}
-.good{color:var(--good)} .bad{color:var(--bad)}
-.rules{margin-top:16px;background:#eef4ff;border-radius:14px;padding:14px;line-height:1.8}
-.result{text-align:center;font-size:2rem;font-weight:800;margin:18px 0 8px}
-.note{text-align:center;color:var(--muted);font-size:.9rem}
-@media(max-width:520px){.choices{grid-template-columns:1fr}.expr{font-size:1.65rem}.card{padding:14px}}
+  :root { font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif; }
+  body { margin:0; background:#f5f6f8; color:#111; }
+  .wrap { max-width:760px; margin:auto; padding:16px; }
+  h1 { font-size:24px; margin:4px 0 6px; }
+  .sub { color:#555; font-size:14px; margin-bottom:12px; }
+  .toprow { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  button { font-size:18px; padding:12px 16px; border:1px solid #bbb; border-radius:12px; background:white; }
+  button.primary { font-weight:700; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .stat { background:white; border-radius:14px; padding:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+  .stat b { display:block; font-size:20px; }
+  .stat span { font-size:12px; color:#666; }
+  .card { background:white; border-radius:18px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+  .kind { display:inline-block; font-size:13px; color:#666; border:1px solid #ddd; border-radius:999px; padding:4px 9px; }
+  .qno { font-size:14px; color:#666; margin-top:8px; }
+  .expr { font-size:34px; font-weight:700; margin:18px 0; line-height:1.35; }
+  .choices { display:grid; gap:10px; }
+  .choice { text-align:left; width:100%; }
+  .ok { background:#e9f7e9 !important; border-color:#79aa79 !important; }
+  .ng { background:#fdeaea !important; border-color:#d77 !important; }
+  .msg { min-height:46px; margin-top:14px; font-size:18px; font-weight:700; }
+  .note { font-size:15px; font-weight:400; color:#555; margin-top:6px; }
+  .footer { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .summary { margin-top:14px; font-size:15px; color:#555; line-height:1.6; }
+  .danger { font-weight:700; }
 </style>
 </head>
 <body>
-<main>
-<div class="card">
-  <h1>毎回ランダム 5分計算順序トレーニング</h1>
-  <p class="sub">開くたび・やり直すたびに、数字と式を自動で作ります。</p>
+<div class="wrap">
+  <h1>ランダム20問トレーニング</h1>
+  <div class="sub">計算順序と逆算ルールを混ぜて出題。計算そのものではなく「正しい手順・式」を選びます。</div>
 
-  <div class="top"><span id="progress">1 / 10</span><span id="score">正解 0</span></div>
-  <div class="bar"><div id="bar"></div></div>
-
-  <div id="quiz">
-    <div class="prompt">最初に計算する部分はどこ？</div>
-    <div id="expr" class="expr"></div>
-    <div id="choices" class="choices"></div>
-    <div id="feedback" class="feedback" aria-live="polite"></div>
-    <div class="actions">
-      <button id="next" class="primary" disabled>次の問題</button>
-      <button id="restart" class="secondary">新しい10問</button>
-    </div>
+  <div class="stats">
+    <div class="stat"><b id="todayRate">—</b><span>今日の正答率</span></div>
+    <div class="stat"><b id="bestRate">—</b><span>最高正答率</span></div>
+    <div class="stat"><b id="streak">0日</b><span>連続実施</span></div>
   </div>
 
-  <div class="rules">
-    <strong>順番</strong><br>
-    ① （ ）の中<br>
-    ② ×・÷（同じ優先順位なら左から）<br>
-    ③ ＋・−（同じ優先順位なら左から）<br>
-    <span style="color:var(--muted)">速さより正確さ。全問正解を目標に。</span>
+  <div class="toprow">
+    <button id="start" class="primary">今日の20問を始める</button>
+    <button id="newset">新しい20問</button>
+  </div>
+
+  <div class="card">
+    <div id="kind" class="kind">待機中</div>
+    <div id="qno" class="qno"></div>
+    <div id="expr" class="expr">「今日の20問を始める」を押してください</div>
+    <div id="choices" class="choices"></div>
+    <div id="msg" class="msg"></div>
+    <div class="footer">
+      <button id="next" style="display:none">次へ</button>
+    </div>
+    <div id="summary" class="summary"></div>
   </div>
 </div>
-</main>
 
 <script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const rnd = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
-  const pick = arr => arr[rnd(0,arr.length-1)];
-  const shuffle = arr => {
-    const a=[...arr];
-    for(let i=a.length-1;i>0;i--){
-      const j=rnd(0,i); [a[i],a[j]]=[a[j],a[i]];
-    }
-    return a;
-  };
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const today=()=>new Date().toISOString().slice(0,10);
 
-  // 表示用
-  const fmt = s => s.replaceAll('*','×').replaceAll('/','÷').replaceAll('+','＋').replaceAll('-','−');
+let qs=[], idx=0, correct=0, answered=false;
+let orderCorrect=0, orderTotal=0, revCorrect=0, revTotal=0;
+let dangerCorrect=0, dangerTotal=0;
 
-  // 同じ答え候補が出ないように整える
-  function uniqueChoices(items){
-    const out=[];
-    for(const x of items){ if(x && !out.includes(x)) out.push(x); }
-    return out;
+function orderQuestion(){
+  const t=rnd(1,7), a=rnd(2,24), b=rnd(2,12), c=rnd(2,12), d=rnd(2,9);
+  let e,ans,w,n;
+  if(t===1){
+    e=`${a} ＋ ${b} × ${c}`;
+    ans=`${b} × ${c} を先に計算`;
+    w=[`${a} ＋ ${b} を先に計算`,`左から順に計算`,`${a} と ${c} を先に計算`];
+    n="×・÷ は ＋・− より先。";
+  } else if(t===2){
+    e=`${a} − ${b} × ${c}`;
+    ans=`${b} × ${c} を先に計算`;
+    w=[`${a} − ${b} を先に計算`,`左から順に計算`,`${a} と ${c} を先に計算`];
+    n="×・÷ は ＋・− より先。";
+  } else if(t===3){
+    e=`(${a} ＋ ${b}) × ${c}`;
+    ans=`(${a} ＋ ${b}) を先に計算`;
+    w=[`${b} × ${c} を先に計算`,`左から順に計算`,`${a} × ${c} を先に計算`];
+    n="まず ( ) の中。";
+  } else if(t===4){
+    e=`${a} × (${b} ＋ ${c})`;
+    ans=`(${b} ＋ ${c}) を先に計算`;
+    w=[`${a} × ${b} を先に計算`,`左から順に計算`,`${a} ＋ ${c} を先に計算`];
+    n="まず ( ) の中。";
+  } else if(t===5){
+    e=`${a*d} ÷ ${d} ＋ ${b} × ${c}`;
+    ans="÷ と × を先に計算";
+    w=["＋ を先に計算","左から全部順番に計算",`${b} ＋ ${c} を先に計算`];
+    n="×・÷ を先に。";
+  } else if(t===6){
+    e=`(${a} − ${b}) ÷ ${d} ＋ ${c}`;
+    ans=`(${a} − ${b}) を先に計算`;
+    w=["÷ を先に計算","＋ を先に計算","左から順に計算"];
+    n="最優先は ( ) の中。";
+  } else {
+    e=`${a} ＋ ${b} × (${c} − ${d})`;
+    ans=`(${c} − ${d}) を先に計算`;
+    w=[`${a} ＋ ${b} を先に計算`,`${b} × ${c} を先に計算`,`左から順に計算`];
+    n="まず ( )。その後に ×・÷。";
   }
+  return {kind:"計算順序",e,ans,cs:shuffle([ans,...w]),n,danger:false};
+}
 
-  // 問題テンプレート。
-  // answerText が「最初に処理する部分」。
-  function makeQuestion(){
-    const type=rnd(1,7);
-    let e, ans, wrong=[];
+function reverseQuestion(){
+  const t=rnd(1,10);
+  let A,B,e,ans,w,n,danger=false;
 
-    if(type===1){
-      // a + b × (c - d)
-      const a=rnd(5,40), b=rnd(2,9), d=rnd(1,6), c=rnd(d+2,d+9);
-      e=`${a} + ${b} * (${c} - ${d})`;
-      ans=`${c} - ${d}`;
-      wrong=[`${a} + ${b}`,`${b} * ${c}`,`${b} * (${c} - ${d})`];
-    } else if(type===2){
-      // a - b × c + d
-      const a=rnd(20,80), b=rnd(2,9), c=rnd(2,9), d=rnd(1,15);
-      e=`${a} - ${b} * ${c} + ${d}`;
-      ans=`${b} * ${c}`;
-      wrong=[`${a} - ${b}`,`${c} + ${d}`,`${a} - ${b*c}`];
-    } else if(type===3){
-      // a ÷ (b-c) + d
-      const c=rnd(1,6), b=rnd(c+2,c+8), diff=b-c;
-      const k=rnd(2,9), a=diff*k, d=rnd(1,15);
-      e=`${a} / (${b} - ${c}) + ${d}`;
-      ans=`${b} - ${c}`;
-      wrong=[`${a} / ${b}`,`${c} + ${d}`,`${a} / ${diff}`];
-    } else if(type===4){
-      // a + b ÷ c × d
-      const c=rnd(2,9), k=rnd(2,9), b=c*k, a=rnd(1,25), d=rnd(2,8);
-      e=`${a} + ${b} / ${c} * ${d}`;
-      ans=`${b} / ${c}`;
-      wrong=[`${a} + ${b}`,`${c} * ${d}`,`${b} / (${c} * ${d})`];
-    } else if(type===5){
-      // a - (b+c) × d
-      const a=rnd(30,100), b=rnd(2,15), c=rnd(2,15), d=rnd(2,8);
-      e=`${a} - (${b} + ${c}) * ${d}`;
-      ans=`${b} + ${c}`;
-      wrong=[`${a} - ${b}`,`${c} * ${d}`,`(${b} + ${c}) * ${d}`];
-    } else if(type===6){
-      // a ÷ (b - c × d)
-      const c=rnd(2,6), d=rnd(2,5), cd=c*d;
-      const inner=rnd(2,8), b=cd+inner;
-      const k=rnd(2,9), a=inner*k;
-      e=`${a} / (${b} - ${c} * ${d})`;
-      ans=`${c} * ${d}`;
-      wrong=[`${a} / ${b}`,`${b} - ${c}`,`${b} - ${cd}`];
-    } else {
-      // a + (b ÷ c - d) × e
-      const c=rnd(2,8), q=rnd(3,10), b=c*q;
-      const d=rnd(1,Math.max(1,q-1)), a=rnd(1,20), e2=rnd(2,7);
-      e=`${a} + (${b} / ${c} - ${d}) * ${e2}`;
-      ans=`${b} / ${c}`;
-      wrong=[`${a} + ${b}`,`${c} - ${d}`,`${d} * ${e2}`];
-    }
-
-    let choices=uniqueChoices([ans,...wrong]);
-    // 念のため4択にする
-    while(choices.length<4) choices.push(`別の部分 ${choices.length+1}`);
-    choices=shuffle(choices.slice(0,4));
-    return {
-      expr:fmt(e),
-      choices:choices.map(fmt),
-      answer:fmt(ans),
-      why: explanationFor(e, ans)
-    };
+  if(t<=3){ // A - □ = B
+    B=rnd(2,30); const x=rnd(2,25); A=B+x;
+    e=`${A} − □ ＝ ${B}`;
+    ans=`□ ＝ ${A} − ${B}`;
+    w=[`□ ＝ ${B} ＋ ${A}`,`□ ＝ ${B} − ${A}`,`□ ＝ ${A} ＋ ${B}`];
+    n="要注意：□の左に「−」。A−□＝B なら □＝A−B。";
+    danger=true;
+  } else if(t<=6){ // A ÷ □ = B
+    B=rnd(2,12); const x=rnd(2,12); A=B*x;
+    e=`${A} ÷ □ ＝ ${B}`;
+    ans=`□ ＝ ${A} ÷ ${B}`;
+    w=[`□ ＝ ${B} × ${A}`,`□ ＝ ${A} × ${B}`,`□ ＝ ${B} ÷ ${A}`];
+    n="要注意：□の左に「÷」。A÷□＝B なら □＝A÷B。";
+    danger=true;
+  } else if(t===7){ // □ - A = B
+    A=rnd(2,25); B=rnd(2,30);
+    e=`□ − ${A} ＝ ${B}`;
+    ans=`□ ＝ ${B} ＋ ${A}`;
+    w=[`□ ＝ ${B} − ${A}`,`□ ＝ ${A} − ${B}`,`□ ＝ ${A} ＋ ${B}`];
+    n="□が先頭なら、引いた分を足して戻す。";
+  } else if(t===8){ // □ ÷ A = B
+    A=rnd(2,12); B=rnd(2,12);
+    e=`□ ÷ ${A} ＝ ${B}`;
+    ans=`□ ＝ ${B} × ${A}`;
+    w=[`□ ＝ ${B} ÷ ${A}`,`□ ＝ ${A} ÷ ${B}`,`□ ＝ ${A} × ${B}`];
+    n="□が先頭なら、割った数を掛けて戻す。";
+  } else if(t===9){ // □ + A = B
+    A=rnd(2,25); const x=rnd(2,30); B=A+x;
+    e=`□ ＋ ${A} ＝ ${B}`;
+    ans=`□ ＝ ${B} − ${A}`;
+    w=[`□ ＝ ${B} ＋ ${A}`,`□ ＝ ${A} − ${B}`,`□ ＝ ${A} × ${B}`];
+    n="足した分を引いて戻す。";
+  } else { // □ × A = B
+    A=rnd(2,12); const x=rnd(2,12); B=A*x;
+    e=`□ × ${A} ＝ ${B}`;
+    ans=`□ ＝ ${B} ÷ ${A}`;
+    w=[`□ ＝ ${B} × ${A}`,`□ ＝ ${A} ÷ ${B}`,`□ ＝ ${A} ＋ ${B}`];
+    n="掛けた数で割って戻す。";
   }
+  return {kind:"逆算ルール",e,ans,cs:shuffle([ans,...w]),n,danger};
+}
 
-  function explanationFor(expr, ans){
-    if(expr.includes('(')){
-      // 括弧内に×÷があるなら、その×÷を先に。
-      const inside=expr.slice(expr.indexOf('(')+1, expr.indexOf(')'));
-      if(inside.includes('*') || inside.includes('/')){
-        if(ans.includes('*') || ans.includes('/')) return '（ ）の中でも、×・÷を先に計算します。';
-        return 'まず（ ）の中を計算します。';
-      }
-      return 'まず（ ）の中を計算します。';
-    }
-    if(ans.includes('*') || ans.includes('/')) return '×・÷は、＋・−より先です。';
-    return '同じ優先順位なら左から計算します。';
-  }
+function makeSet(){
+  const a=[];
+  for(let i=0;i<10;i++) a.push(orderQuestion());
+  for(let i=0;i<10;i++) a.push(reverseQuestion());
+  return shuffle(a);
+}
 
-  let qs=[], idx=0, score=0, answered=false;
+function startNew(){
+  qs=makeSet(); idx=0; correct=0; answered=false;
+  orderCorrect=orderTotal=revCorrect=revTotal=dangerCorrect=dangerTotal=0;
+  document.getElementById("summary").innerHTML="";
+  show();
+}
 
-  function newSet(){
-    qs=Array.from({length:10},()=>makeQuestion());
-    idx=0; score=0; render();
-  }
-
-  function render(){
-    answered=false;
-    const q=qs[idx];
-    $('progress').textContent=`${idx+1} / 10`;
-    $('score').textContent=`正解 ${score}`;
-    $('bar').style.width=`${(idx+1)*10}%`;
-    $('expr').textContent=q.expr;
-    $('choices').innerHTML='';
-    $('feedback').textContent='';
-    $('feedback').className='feedback';
-    $('next').disabled=true;
-    $('next').textContent=idx===9?'結果を見る':'次の問題';
-
-    q.choices.forEach(choice=>{
-      const b=document.createElement('button');
-      b.type='button'; b.textContent=choice;
-      b.addEventListener('click',()=>answer(choice));
-      $('choices').appendChild(b);
-    });
-  }
-
-  function answer(choice){
-    if(answered) return;
-    answered=true;
-    const q=qs[idx];
-    [...$('choices').children].forEach(b=>b.disabled=true);
-    if(choice===q.answer){
-      score++;
-      $('feedback').textContent='○ 正解！ '+q.why;
-      $('feedback').className='feedback good';
-    }else{
-      $('feedback').textContent=`× 惜しい。最初は「${q.answer}」。${q.why}`;
-      $('feedback').className='feedback bad';
-    }
-    $('score').textContent=`正解 ${score}`;
-    $('next').disabled=false;
-  }
-
-  function finish(){
-    $('expr').innerHTML=`<div class="result">${score} / 10</div>`;
-    $('choices').innerHTML='';
-    $('feedback').className='feedback';
-    $('feedback').textContent=score===10
-      ? '全問正解。今日は終了！'
-      : score>=8
-      ? 'かなり良いです。明日も3〜5分だけ。'
-      : '焦らず、順番だけ確認。新しい10問でもう一度できます。';
-    $('next').disabled=true;
-  }
-
-  $('next').addEventListener('click',()=>{
-    if(idx===9){ finish(); }
-    else { idx++; render(); }
+function show(){
+  answered=false;
+  const q=qs[idx];
+  kind.textContent=q.kind + (q.danger ? "・要注意型" : "");
+  qno.textContent=`${idx+1} / ${qs.length}`;
+  expr.textContent=q.e;
+  msg.innerHTML="";
+  choices.innerHTML="";
+  next.style.display="none";
+  q.cs.forEach(c=>{
+    const b=document.createElement("button");
+    b.className="choice";
+    b.textContent=c;
+    b.onclick=()=>answer(b,c);
+    choices.appendChild(b);
   });
-  $('restart').addEventListener('click',newSet);
+}
 
-  newSet();
-})();
+function answer(btn,c){
+  if(answered) return;
+  answered=true;
+  const q=qs[idx];
+  if(q.kind==="計算順序") orderTotal++; else revTotal++;
+  if(q.danger) dangerTotal++;
+
+  [...document.querySelectorAll(".choice")].forEach(b=>{
+    if(b.textContent===q.ans) b.classList.add("ok");
+  });
+
+  if(c===q.ans){
+    correct++;
+    if(q.kind==="計算順序") orderCorrect++; else revCorrect++;
+    if(q.danger) dangerCorrect++;
+    msg.innerHTML=`○ 正解<div class="note">${q.n}</div>`;
+  } else {
+    btn.classList.add("ng");
+    msg.innerHTML=`× ルールを確認<div class="note">${q.n}</div>`;
+  }
+  next.style.display="inline-block";
+}
+
+function finish(){
+  const rate=Math.round(correct/qs.length*100);
+  const oRate=orderTotal?Math.round(orderCorrect/orderTotal*100):0;
+  const rRate=revTotal?Math.round(revCorrect/revTotal*100):0;
+  const dRate=dangerTotal?Math.round(dangerCorrect/dangerTotal*100):0;
+
+  saveResult(rate);
+
+  kind.textContent="終了";
+  qno.textContent="";
+  expr.textContent=`${correct} / ${qs.length} 問正解`;
+  choices.innerHTML="";
+  msg.innerHTML = rate===100 ? "全問正解！" : "間違えた型は、明日もう一度。";
+  summary.innerHTML = `
+    計算順序：${orderCorrect}/${orderTotal}（${oRate}%）<br>
+    逆算ルール：${revCorrect}/${revTotal}（${rRate}%）<br>
+    <span class="danger">要注意型 A−□ / A÷□：${dangerCorrect}/${dangerTotal}（${dRate}%）</span>
+  `;
+  next.style.display="none";
+  refreshStats();
+}
+
+function saveResult(rate){
+  const d=today();
+  const data=JSON.parse(localStorage.getItem("calcTrainerHistory")||"{}");
+  data[d]=Math.max(data[d]||0,rate);
+  localStorage.setItem("calcTrainerHistory",JSON.stringify(data));
+}
+
+function refreshStats(){
+  const data=JSON.parse(localStorage.getItem("calcTrainerHistory")||"{}");
+  const vals=Object.values(data);
+  todayRate.textContent = data[today()]!==undefined ? data[today()]+"%" : "—";
+  bestRate.textContent = vals.length ? Math.max(...vals)+"%" : "—";
+
+  let s=0;
+  const cur=new Date();
+  while(true){
+    const key=cur.toISOString().slice(0,10);
+    if(data[key]===undefined) break;
+    s++;
+    cur.setDate(cur.getDate()-1);
+  }
+  streak.textContent=s+"日";
+}
+
+next.onclick=()=>{ idx++; idx>=qs.length ? finish() : show(); };
+start.onclick=startNew;
+newset.onclick=startNew;
+
+const kind=document.getElementById("kind"),
+      qno=document.getElementById("qno"),
+      expr=document.getElementById("expr"),
+      choices=document.getElementById("choices"),
+      msg=document.getElementById("msg"),
+      next=document.getElementById("next"),
+      start=document.getElementById("start"),
+      newset=document.getElementById("newset"),
+      summary=document.getElementById("summary"),
+      todayRate=document.getElementById("todayRate"),
+      bestRate=document.getElementById("bestRate"),
+      streak=document.getElementById("streak");
+
+refreshStats();
 </script>
 </body>
 </html>
