@@ -259,10 +259,6 @@ function refreshStats(){
   streak.textContent=s+"日";
 }
 
-next.onclick=()=>{ idx++; idx>=qs.length ? finish() : show(); };
-start.onclick=startNew;
-newset.onclick=startNew;
-
 const kind=document.getElementById("kind"),
       qno=document.getElementById("qno"),
       expr=document.getElementById("expr"),
@@ -275,6 +271,10 @@ const kind=document.getElementById("kind"),
       todayRate=document.getElementById("todayRate"),
       bestRate=document.getElementById("bestRate"),
       streak=document.getElementById("streak");
+
+next.onclick=()=>{ idx++; idx>=qs.length ? finish() : show(); };
+start.onclick=startNew;
+newset.onclick=startNew;
 
 refreshStats();
 </script>
